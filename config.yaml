@@ -1,0 +1,25 @@
+seed: 1
+
+dataset_size: 200
+validation_ratio: 0.2
+
+noise_of_noisy_feature: 0.1
+interval: 2
+
+learning_rate: 0.001
+lambda_reg: 0.01
+regularization_order: 2
+nn_architecture: "MLP"
+non_linearity: "tanh"
+
+
+# TRAINING
+batch_size: 16
+max_epochs: 200
+how: "linspace" # or random
+
+
+#### ARHITECTURE
+nodes: 50
+
+experiment_name: "LearningSin(x)withNoise"
