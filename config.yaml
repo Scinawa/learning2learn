@@ -6,20 +6,20 @@ validation_ratio: 0.2
 noise_of_noisy_feature: 0.1
 interval: 2
 
-learning_rate: 0.001
-lambda_reg: 0.01
-regularization_order: 2
-nn_architecture: "MLP"
-non_linearity: "tanh"
 
+# list of nodes in hidden layers
+nn_architecture: "[2,3,5,1]"   # must start with 2 and end with 1
+non_linearity: "ReLU" # ReLU or Sigmoid or Tanh
 
 # TRAINING
 batch_size: 16
 max_epochs: 200
 how: "linspace" # or random
+learning_rate: 0.01
+lambda_reg: 0.5
+# 0,1,2
+regularization_order: 0
 
 
-#### ARHITECTURE
-nodes: 50
-
+seed: 43
 experiment_name: "LearningSin(x)withNoise"
