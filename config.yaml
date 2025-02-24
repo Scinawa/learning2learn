@@ -1,25 +1,30 @@
-seed: 1
 
+############ Configuration ############
+seed: 43
+experiment_name: "LearningSin(x)withNoise"
+
+############ Dataset properties ############
 dataset_size: 200
 validation_ratio: 0.2
-
+how: "linspace" # or random
 noise_of_noisy_feature: 0.1
-interval: 2
+interval: 2    # if x, dataset is sampled from -x pi to +x pi
 
-
-# list of nodes in hidden layers
+# 4 (2), 6 (3), 10 (5), 5(1) 
+############ Architecture of NN ############
 nn_architecture: "[2,3,5,1]"   # must start with 2 and end with 1
 non_linearity: "ReLU" # ReLU or Sigmoid or Tanh
 
-# TRAINING
+############ Training parameters ############
 batch_size: 16
 max_epochs: 200
-how: "linspace" # or random
+scheduler: "FIXED"
 learning_rate: 0.01
-lambda_reg: 0.5
-# 0,1,2
-regularization_order: 0
+loss_name: "HuberLoss" # MSELoss vs HuberLoss vs L1loss
 
 
-seed: 43
-experiment_name: "LearningSin(x)withNoise"
+############ Regularization ############
+regularization_order: 0   # 0,1,2  0=no regulartzaition, 1=L1, 2=L2
+lambda_reg: 0.5  # weight of regularization 
+
+

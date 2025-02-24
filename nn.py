@@ -6,13 +6,16 @@ class CustomArch(nn.Module):
         super(CustomArch, self).__init__()
 
         # Get activation function
+        # JI note.
         non_linearity = getattr(nn, non_linearity)
 
         layers = []
         # Create layers
         for i in range(len(nn_architecture) - 1):
             # Add linear layer
-            layers.append(nn.Linear(nn_architecture[i], nn_architecture[i + 1]))
+            layers.append(
+                nn.Linear(nn_architecture[i], nn_architecture[i + 1], bias=False)
+            )
 
             # Add activation except after last layer
             if i < len(nn_architecture) - 2:
