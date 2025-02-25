@@ -20,6 +20,7 @@ def return_parser():
     parser.add_argument("--batch_size", type=int)
     parser.add_argument("--how", type=str)
     parser.add_argument("--experiment_name", type=str)
+    parser.add_argument("--how_often_to_plot", type=int)
     parser.add_argument("--scheduler", type=str)
     return parser
 
