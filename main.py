@@ -69,6 +69,7 @@ def main():
         nn_architecture=final_args["nn_architecture"],
         scheduler=final_args["scheduler"],
         loss_name=final_args["loss_name"],
+        how_often_to_plot=final_args["how_often_to_plot"],
     )
     print("Model created")
 
