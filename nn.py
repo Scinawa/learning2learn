@@ -14,7 +14,7 @@ class CustomArch(nn.Module):
         for i in range(len(nn_architecture) - 1):
             # Add linear layer
             layers.append(
-                nn.Linear(nn_architecture[i], nn_architecture[i + 1], bias=False)
+                nn.Linear(nn_architecture[i], nn_architecture[i + 1], bias=True)
             )
 
             # Add activation except after last layer
