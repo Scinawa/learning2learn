@@ -16,26 +16,46 @@ import pdb
 
 
 class SinApproximator(LightningModule):
+    def count_nonlinear_layers(self):
+        return len(
+            [layer for layer in self.model.layers if not isinstance(layer, nn.Linear)]
+        )
 
     def _activation_hook(self, layer_name):
-        """Creates a hook function that stores the mean (over the batch) of the activations."""
+        """
+        Creates a hook function that stores the mean (over the batch) of the activations.
+        This is performed only the first batch of the training.
+        """
 
         def hook(module, input, output):
-            # TODO maybe on validation!?
-            if not self.training:
-                if not isinstance(module, nn.Linear):
+            if self._is_validation_step == 1:
+                if self._first_validation_done_in_epoch == 0:
+                    if not isinstance(module, nn.Linear):
+                        if self.storing_of_activation <= self.count_nonlinear_layers():
+                            try:
+                                with torch.no_grad():
+                                    # print(
+                                    #     f"Hook called for layer: {layer_name}"
+                                    # )  # Debug call
+                                    # print(f"Module type: {type(module)}")
+                                    # print(f"Output shape: {output.shape}")
+                                    # # pdb.set_trace()
 
-                    # Log the mean of the activations
-                    # todo maybe aggregate per epoch
-                    try:
-                        with torch.no_grad():
-                            # pdb.set_trace()
-                            self.activations_at_layer[layer_name].append(
-                                output.mean(dim=0).detach().cpu().clone().numpy()
-                            )
-                    except Exception as e:
-                        # print(e)
-                        pass
+                                    averages_at_layer = (
+                                        output.mean(dim=0)
+                                        .detach()
+                                        .cpu()
+                                        .clone()
+                                        .numpy()
+                                    )
+
+                                    self.activations_at_layer[layer_name].append(
+                                        averages_at_layer
+                                    )
+                                    self.storing_of_activation += 1
+                            except Exception as e:
+                                # print(e)
+                                pass
 
         return hook
 
@@ -49,8 +69,6 @@ class SinApproximator(LightningModule):
 
         # Move save_hyperparameters after super init
         self.save_hyperparameters()
-
-        # pdb.set_trace()
 
         # Initialize model
         if type(ast.literal_eval(self.hparams.nn_architecture)) == list:
@@ -67,8 +85,11 @@ class SinApproximator(LightningModule):
         # JI note
         self.criterion = getattr(nn, self.hparams.loss_name)()
 
-        # Average firing value
+        # Store average firing value
         self.activations_at_layer = {}
+        self.storing_of_activation = 0
+        self._is_validation_step = 0
+        self._first_validation_done_in_epoch = 0
         for i, layer in enumerate(self.model.layers):
             if not isinstance(layer, nn.Linear):
                 self.activations_at_layer[f"layers.{i}"] = []
@@ -77,19 +98,18 @@ class SinApproximator(LightningModule):
             if not isinstance(module, nn.Linear):  # Only register on non-linear layers
                 module.register_forward_hook(self._activation_hook(name))
 
-        # Weights at layer
-        # Will store here the weights of each layer at each iteration
+        # Store weights at layer for each layer at each iteration
         self.weights_at_layer = {}
         for i, layer in enumerate(self.model.layers):
             if isinstance(layer, nn.Linear):
                 self.weights_at_layer[f"layers.{i}"] = []
 
-        # Define the linspace for plotting
-        self.x_plot = torch.linspace(-2 * np.pi, 2 * np.pi, 1000).T.unsqueeze(1)
-        self.x_plot = torch.hstack([self.x_plot, torch.zeros_like(self.x_plot)])
+        # Define a linspace for plotting
+        x_plot = torch.linspace(-2 * np.pi, 2 * np.pi, 2000).T.unsqueeze(1)
+        self.x_plot = torch.hstack([x_plot, torch.zeros_like(x_plot)])
 
     def forward(self, x):
-        return self.model(x)
+        return self.model(x)  # self(X)
 
     def configure_optimizers(self):
 
@@ -111,7 +131,7 @@ class SinApproximator(LightningModule):
         if self.hparams.scheduler == "StepLR":
             # https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.StepLR.html
             scheduler = torch.optim.lr_scheduler.StepLR(
-                optimizer, step_size=10, gamma=0.80
+                optimizer, step_size=500, gamma=0.96
             )
             return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
@@ -165,33 +185,45 @@ class SinApproximator(LightningModule):
 
     def validation_step(self, batch, batch_idx):
 
+        self._is_validation_step = 1
         X, y = batch
         outputs = self(X)
         loss = self.criterion(outputs, y)
+        self._is_validation_step = 0
+        self._first_validation_done_in_epoch = 1
 
         self.log("val_loss", loss, prog_bar=True, logger=True, on_epoch=True)
 
-        # PLOT MODEL PERFORMANCE
-        if self.current_epoch % 5 == 0 and self.trainer is not None:
+        # Plot model performances
+        if (
+            self.current_epoch % self.hparams.how_often_to_plot == 0
+            and self.trainer is not None
+        ):
             self._dump_plot_of_performances()
 
         return loss
 
+    def on_validation_end(self):
+        self._first_validation_done_in_epoch = 0
+
     def on_train_epoch_end(self):
         # For every layer in the model,  store the INPUT weights
 
-        # ATTENTION layer.weight[:, 1] is the right way to access the input weight
+        # Memo layer.weight[:, 1] is the right way to access the input weight
         # of the second feature if we are talking about the first layer
         # however we take all the weights for our plot
         with torch.no_grad():
             for i, layer in enumerate(self.model.layers):
-                # if isinstance(layer, nn.Linear):
                 try:
                     self.weights_at_layer[f"layers.{i}"].append(
                         layer.weight.detach().cpu().clone()
                     )
                 except Exception as e:
-                    print
+                    pass
+
+        # Now signal that we want to store the value of the firing of the neurons
+        # at the next iteration
+        self.storing_of_activation = 0
 
     def _dump_plot_of_performances(self):
         with torch.no_grad():

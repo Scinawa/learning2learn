@@ -34,7 +34,7 @@ def plot_sine_approximation(
 
 
     axes.plot(x_values[:, 0],  np.sin(x_values[:, 0]), label="True sin(x)")
-    axes.plot(x_values[:, 0],  fitted_model_on_x_values,       label="Fitted model for sin(x)",    linestyle="dashed",   color="red")
+    axes.scatter(x_values[:, 0],  fitted_model_on_x_values,       label="Fitted model", marker='o',  linestyle='-',   color="red", s=1)
 
     axes.scatter(X_train[:, 0], y_train, label="Training data", marker="o", linestyle="", color="blue", s=10 )
     axes.scatter( X_val[:, 0], y_val, label="Validation data", marker="v",  linestyle="",  color="green", s=10 )
@@ -147,7 +147,7 @@ def plot_all_weights(model, weights_at_layer):
         len(weights_at_layer),
         1,
         figsize=(6, 3 * len(weights_at_layer)),  # Make each subplot 3 inches tall
-        dpi=50,
+        dpi=100,
     )
 
     # For each layer in the model
@@ -212,7 +212,8 @@ def plot_firing_value(model, firings_at_layer):
         weights_array = np.array(layer_firings)
 
         # Debug print
-        # print(f"Layer {layer_name} weights shape: {weights_array.shape}")
+        print(f"Layer {layer_name} weights shape: {weights_array.shape}")
+        # pdb.set_trace()
 
         # Plot each neuron's weights
         for j in range(weights_array.shape[1]):
