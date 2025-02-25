@@ -12,6 +12,7 @@ def setup_experiment(experiment_name):
         experiment = mlflow.get_experiment_by_name(experiment_name)
         if experiment is None:
             # Create new experiment if it doesn't exist
+            print("Create experiment if doesn't exist")
             experiment_id = mlflow.create_experiment(experiment_name)
         else:
             experiment_id = experiment.experiment_id
@@ -56,7 +57,7 @@ for nl in "${NON_LINEARITIES[@]}"; do
                         # Inside the loops, update the python command:
                         python main.py \
                             --non_linearity "$nl" \
-                            --max_epoch 1000 \
+                            --max_epochs 1000 \
                             --dataset_size 50 \
                             --learning_rate "$lr" \
                             --batch_size "$bs" \
